@@ -1,0 +1,39 @@
+{
+  "upstream": "https://github.com/jpoindexter/x-native",
+  "reviewed_at": "2026-10-05",
+  "license": "MIT",
+  "version": "0.1.0",
+  "runtime_dependencies": [],
+  "source_commit_not_resolved": true,
+  "files_sha256": {
+    "src/index.ts": "44001f5d7f2a67d5b20057b7dff44e4504245e5dbba1c867249acd9ff155529d",
+    "src/client.ts": "f9701023b7d38dfe458395338c7da6dcacccedcae69ca58ddd64d7fc558ba240",
+    "src/heal.ts": "9c56938232cc18214ec63ae8729b67ff6f6e95853903ab6fad0cd3cc43b0b166",
+    "src/parse.ts": "5c35c9ff033b37e8ae70567c763ce18a2e246885e8f8375bd76b9855e1375f23",
+    "src/cache.ts": "b98525cc565871299fabbbc7a858d23ed0b8b7d99d99b0fdde373eadbf3de144",
+    "src/cookie.ts": "7b9fd3888a34288db9980b2c8fd8cc226ee4ca498182718a8446676bdc703092",
+    "package.json": "bf1002f29b6422752bd778178014c4a50cb948b7fada12f386a3fa9ff52bf7c2",
+    "LICENSE": "3bae88792ca83e33ae1777824009cc54737739c26c88a7adcac9ce677658ba66",
+    "README.md": "652ac513f9186488c1922c5e42387cfdf5efc03e1abc64f7d9ba7d047010cb1d"
+  },
+  "adapted_parts": [
+    "read feature flags",
+    "query ID extraction patterns",
+    "legacy asset URL pattern"
+  ],
+  "not_imported": [
+    "filesystem cache",
+    "CLI",
+    "Bookmarks",
+    "hardcoded bearer",
+    "browser UA",
+    "raw error messages"
+  ],
+  "extensions": [
+    "current x-web assets",
+    "post author/time/relationships/media",
+    "strict GET operation boundary",
+    "structured safe errors",
+    "snapshot reader"
+  ]
+}

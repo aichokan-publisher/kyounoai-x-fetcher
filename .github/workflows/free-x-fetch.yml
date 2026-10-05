@@ -1,0 +1,62 @@
+name: Free read-only X capture
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['control/capture-request.json']
+# No schedule before live acceptance. Owner/agent must explicitly request each run.
+permissions:
+  contents: read
+concurrency:
+  group: free-x-capture
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests without X credentials
+        run: node --test tests/scout.test.mjs tests/free-backend.test.mjs
+      - name: Start with fresh observations
+        run: node -e 'require("fs").rmSync("data", {recursive:true, force:true});'
+      - name: Check Cookie Secret presence without printing values
+        env:
+          X_AUTH_TOKEN: ${{ secrets.X_AUTH_TOKEN }}
+          X_CT0: ${{ secrets.X_CT0 }}
+        run: node --input-type=module -e 'import {cookieAuth} from "./lib/scout/adapters/x-cookie.mjs"; try { cookieAuth(process.env); console.log("COOKIE_SECRETS_PRESENT"); } catch { console.error("COOKIE_REQUIRED"); process.exitCode=1; }'
+      - name: Account/time regression and author-independent discovery
+        id: acceptance
+        continue-on-error: true
+        env:
+          X_AUTH_TOKEN: ${{ secrets.X_AUTH_TOKEN }}
+          X_CT0: ${{ secrets.X_CT0 }}
+          X_WEB_QUERY_IDS_JSON: ${{ vars.X_WEB_QUERY_IDS_JSON }}
+          X_WEB_FEATURES_JSON: ${{ vars.X_WEB_FEATURES_JSON }}
+        run: node fetcher/acceptance.mjs
+      - name: Read public posts into snapshot
+        id: capture
+        if: steps.acceptance.outputs.capture_allowed == 'true'
+        continue-on-error: true
+        env:
+          X_AUTH_TOKEN: ${{ secrets.X_AUTH_TOKEN }}
+          X_CT0: ${{ secrets.X_CT0 }}
+          X_WEB_QUERY_IDS_JSON: ${{ vars.X_WEB_QUERY_IDS_JSON }}
+          X_WEB_FEATURES_JSON: ${{ vars.X_WEB_FEATURES_JSON }}
+        run: node fetcher/capture.mjs
+      - name: Save sanitized observations and acceptance report
+        if: always() && steps.acceptance.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node fetcher/publish.mjs
+      - name: Report backend or acceptance failure without raw errors
+        if: always() && (steps.acceptance.outcome == 'failure' || steps.capture.outcome == 'failure')
+        run: node -e 'console.error("FREE_BACKEND_OR_ACCEPTANCE_INCOMPLETE"); process.exitCode=1;'

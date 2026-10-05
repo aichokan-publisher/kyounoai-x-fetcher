@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "accounts": [
+    {"handle":"thsottiaux","group":"openai-product","high_signal":true,"reason":"User-specified Codex/Work regression source"},
+    {"handle":"OpenAIDevs","group":"openai","high_signal":true,"reason":"Developer product announcements"},
+    {"handle":"AnthropicAI","group":"anthropic","high_signal":true,"reason":"Model and product announcements"},
+    {"handle":"GoogleDeepMind","group":"google","high_signal":true,"reason":"Research and model announcements"},
+    {"handle":"huggingface","group":"huggingface","high_signal":true,"reason":"Open model and tool ecosystem"},
+    {"handle":"simonw","group":"independent-simonw","high_signal":true,"reason":"Developer tools and reproducible experiments"},
+    {"handle":"karpathy","group":"independent-karpathy","high_signal":true,"reason":"Research and hands-on demos"},
+    {"handle":"swyx","group":"independent-swyx","high_signal":true,"reason":"AI developer ecosystem"}
+  ],
+  "discovery_queries": [
+    "(AI OR LLM OR model) (released OR demo OR benchmark OR weights OR paper) -is:retweet",
+    "(AI OR agent OR inference) (tool OR changelog OR API OR preview) -is:retweet",
+    "(AI OR モデル OR エージェント) (公開 OR リリース OR デモ OR 仕様変更) -is:retweet"
+  ]
+}

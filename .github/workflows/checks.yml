@@ -1,0 +1,21 @@
+name: Read-only checks
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['data/**', 'control/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/scout.test.mjs tests/free-backend.test.mjs

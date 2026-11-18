@@ -7,6 +7,7 @@ const env=await readEnvironment();
 const queryId='vLHjqbDv7TPFMBkIIO1nOA';
 env.X_WEB_QUERY_IDS_JSON=JSON.stringify({SearchTimeline:queryId});
 const features=JSON.parse(env.X_WEB_FEATURES_JSON);
+features.post_ctas_fetch_enabled=true;
 features.x_elections_post_context_enabled=true;
 features.responsive_web_made_on_x_label_enabled=false;
 env.X_WEB_FEATURES_JSON=JSON.stringify(features);

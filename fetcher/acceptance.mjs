@@ -8,7 +8,14 @@ import {MemoryState,readEnvironment} from './runtime.mjs';
 const terminalCodes=new Set(['AUTH_MISSING','AUTH_EXPIRED','FREE_BACKEND_BLOCKED','RATE_LIMITED']);
 export async function runFetcherAcceptance(env,{invoke=null,now=Date.now()}={}){
  const state=new MemoryState();let terminal=null;
- const backend=invoke??((name,args)=>runTool(name,args,{...env,X_SCOUT_BACKENDS:'x_cookie'},{store:state}));
+ const http=[];
+ const fetcher=async(url,options)=>{
+  const response=await fetch(url,options);const u=new URL(url);
+  const op=u.pathname.split('/').at(-1);
+  const label=u.origin==='https://abs.twimg.com'?'asset':u.origin==='https://x.com'&&u.pathname==='/'?'homepage':['UserByScreenName','UserTweetsAndReplies','UserTweets','TweetDetail','TweetResultByRestId','SearchTimeline'].includes(op)?op:'other';
+  if(http.length<100)http.push({operation:label,status:response.status});return response;
+ };
+ const backend=invoke??((name,args)=>runTool(name,args,{...env,X_SCOUT_BACKENDS:'x_cookie'},{store:state,fetcher}));
  const call=async(name,args)=>{
   if(terminal)return {schema_version:'1.0.0',tool:name,status:terminal.code.startsWith('AUTH_')?'auth_required':'backend_error',retrieved_at:new Date().toISOString(),posts:[],candidates:[],errors:[terminal],warnings:[],coverage:{requested:0,succeeded:0,failed:0,complete:false,requests:0,reason:'SESSION_STOPPED'},page:{next_cursor:null,next_watchlist_offset:null,has_more:false},health:null,continue_source_watch:true};
   const result=redact(await backend(name,args),env);
@@ -18,14 +25,14 @@ export async function runFetcherAcceptance(env,{invoke=null,now=Date.now()}={}){
   return result;
  };
  const report=redact(await runAcceptance(call,{now}),env);
- return {...report,execution_environment:'node-free-fetcher',paid_backends_allowed:false,session_terminal_code:terminal?.code??null,primary_source_verification:'pending',media_gap_verification:'pending'};
+ return {...report,http,execution_environment:'node-free-fetcher',paid_backends_allowed:false,session_terminal_code:terminal?.code??null,primary_source_verification:'pending',media_gap_verification:'pending'};
 }
 async function main(){
  const result=await runFetcherAcceptance(await readEnvironment());
  const dir=new URL('../data/',import.meta.url);await mkdir(dir,{recursive:true});
  const output=fileURLToPath(new URL('x-scout-acceptance.json',dir));
  await writeFile(output+'.tmp',JSON.stringify(result));await rename(output+'.tmp',output);
- if(process.env.GITHUB_OUTPUT)await appendFile(process.env.GITHUB_OUTPUT,'capture_allowed='+String(!result.session_terminal_code)+'\n');
+ if(process.env.GITHUB_OUTPUT)await appendFile(process.env.GITHUB_OUTPUT,'capture_allowed='+String(!result.session_terminal_code && !(result.regression.status==='blocked_by_backend' && result.unknown.status==='blocked_by_backend'))+'\n');
  console.log(JSON.stringify({regression:result.regression.status,unknown:result.unknown.status,unknown_posts:result.unknown.result.posts.length,unknown_candidates:result.unknown.result.candidates.length,fixtures_used:false,primary_and_gap_verification:'pending'}));
  if(result.regression.status!=='passed'||!result.unknown.result.candidates.length)process.exitCode=2;
 }

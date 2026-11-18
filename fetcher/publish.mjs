@@ -10,7 +10,7 @@ async function main(){
  for(const filename of ['x-scout-acceptance.json','x-scout-snapshot.json']){
  let text;try{text=await readFile(new URL('../data/'+filename,import.meta.url),'utf8');}catch(e){if(e.code==='ENOENT')continue;throw e;}
  const result=JSON.parse(text);
- if(filename==='x-scout-snapshot.json')validateSnapshot(result);
+ if(filename==='x-scout-snapshot.json'){validateSnapshot(result);const rows=[...Object.values(result.user_posts),...Object.values(result.searches)];if(rows.length&&rows.every(r=>r.posts.length===0&&r.errors.length>0))continue;}
  else{if(result.fixtures_used!==false||result.execution_environment!=='node-free-fetcher'||result.paid_backends_allowed!==false)throw Error();validate(OUTPUT_SCHEMA,result.unknown.result);if(result.regression.post)validate(POST_SCHEMA,result.regression.post);}
  if(Buffer.byteLength(text)>1500000)throw Error();
  const url='https://api.github.com/repos/'+repo+'/contents/data/'+filename;

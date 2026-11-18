@@ -4,15 +4,11 @@ import {ScoutError} from '../lib/scout/errors.mjs';
 import {readEnvironment} from '../fetcher/runtime.mjs';
 
 const env=await readEnvironment();
-const queryId='vLHjqbDv7TPFMBkIIO1nOA';
-env.X_WEB_QUERY_IDS_JSON=JSON.stringify({SearchTimeline:queryId});
+const queryId=JSON.parse(env.X_WEB_QUERY_IDS_JSON).SearchTimeline;
 const features=JSON.parse(env.X_WEB_FEATURES_JSON);
-features.post_ctas_fetch_enabled=true;
-features.x_elections_post_context_enabled=true;
-features.responsive_web_made_on_x_label_enabled=false;
-env.X_WEB_FEATURES_JSON=JSON.stringify(features);
+let diagnostic=null;
 let http=null,attempts=0;
-const transport=new ReadTransport({fetcher:async(url,init)=>{
+const transport=new ReadTransport({observer:e=>{if(e.stage==='read_404')diagnostic={content_kind:e.content_kind,shape:e.shape};},fetcher:async(url,init)=>{
  const u=new URL(url);
  if(u.pathname.includes('/i/api/graphql/')){
   const v=JSON.parse(u.searchParams.get('variables'));
@@ -25,5 +21,5 @@ const transport=new ReadTransport({fetcher:async(url,init)=>{
 let posts=0,error=null;
 try{const result=await new XCookieAdapter(env,transport).search_x({query:'AI',limit:20});posts=result.posts.length;}
 catch(e){error=e instanceof ScoutError?e.code:'BACKEND_UNAVAILABLE';}
-console.log('SCOUT_RESULT '+JSON.stringify({attempts,http,posts,error,feature_count:Object.keys(features).length}));
+console.log('SCOUT_RESULT '+JSON.stringify({attempts,http,posts,error,diagnostic,feature_count:Object.keys(features).length}));
 if(error||posts===0)process.exitCode=1;

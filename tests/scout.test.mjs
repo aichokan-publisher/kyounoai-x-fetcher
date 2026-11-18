@@ -60,3 +60,15 @@ test('malformed normalized adapter data is classified as upstream change',async(
 test('prototype-named unknown parameters are rejected',async()=>{const r=await runTool('get_post',JSON.parse('{"id":"123","__proto__":{}}'),{},opts([adapter()]));assert.equal(r.status,'config_error');});
 
 test('invalid watchlist config does not disable independent post lookup',async()=>{const r=await runTool('get_post',{id:'123'},{X_SCOUT_WATCHLIST_JSON:'bad JSON'},opts([adapter()]));assert.equal(r.posts.length,1);assert.equal(r.status,'ok');});
+
+test('Dots matches only collected watchlist evidence and preserves it when live discovery throws',async()=>{
+ const {optionalXScout}=await import('../docs/dots-integration.mjs');
+ const p={id:'731',url:'https://x.com/example/status/731',text:'Ｃｏｄｅｘ preview',author:{handle:'example'},links:[]};
+ const out=await optionalXScout({sourceCandidates:[{id:'official'}],entities:['Codex','Gemini','example'],callTool:async name=>{
+  if(name==='health_check')return {schema_version:'1.0.0',status:'partial',health:{}};
+  if(name==='scan_watchlist')return {tool:name,schema_version:'1.0.0',status:'partial',posts:[p,p],candidates:[{id:'x:731'}],page:{next_watchlist_offset:null}};
+  throw Error('offline');
+ }});
+ assert.equal(out.xStatus,'partial');assert.equal(out.posts.length,1);assert.deepEqual(out.xCandidates,[{id:'x:731'}]);assert.equal(out.sourceCandidates[0].id,'official');
+ assert.deepEqual(out.watchlistKeywordMatches,{scope:'captured_watchlist_posts_only',posts_checked:1,hits:[{post_id:p.id,url:p.url,entities:['Codex']}]});
+});
